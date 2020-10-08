@@ -3,6 +3,7 @@
 
 import random
 import math
+import time
 
 def create_kromosom(banyakKromosom):
     kromosom = []
@@ -25,6 +26,12 @@ def calculate_fitness(kromosom):
     k = decode_kromosom(kromosom)
     fitness = -1 * ((math.cos(k[0]) * math.sin(k[1])) - (k[0] / (k[1]**2 + 1)))
     return fitness
+
+def calculate_all_fitness(populasi, banyakPopulasi):
+    all_fitness = []
+    for x in range(banyakPopulasi):
+        all_fitness.append(calculate_fitness(populasi[x]))
+    return all_fitness
 
 def tournament_parent(pop, banyakPopulasi, banyakTourney):
     best = []
@@ -57,43 +64,46 @@ def mutasi(child1, child2, probMuta):
             child2[c2] = 0
     return child1, child2
 
-def getElitisme(fitnessAll):
+def get_elitisme(fitnessAll):
     return fitnessAll.index(max(fitnessAll))
 
+def get_lowest(fitnessAll):
+    return fitnessAll.index(min(fitnessAll))
+
+def steady_state(populasi, banyakPopulasi, child):
+    fitness = calculate_all_fitness(populasi, banyakPopulasi)
+    low1 = get_lowest(fitness)
+    fitness[low1] = 9999
+    low2 = get_lowest(fitness)
+    populasi[low1] = child[0]
+    populasi[low2] = child[1]
+    return populasi
+
 def main():
-    # Tanya kenapa ada fungsi fitnessAll
-    # Tanya maksud dari ukuran Tourney
     banyakPopulasi = 100
-    banyakTourney = 50
+    banyakTourney = 10
     probCros = 0.65
     probMuta = 0.13
+    timeout = time.time() + 60*2
 
     populasi = create_populasi(banyakPopulasi)
-    #Hitung fitness semua populasi
-    fitness_semua = []
-    for x in range(banyakPopulasi):
-        fitness_semua.append(calculate_fitness(populasi[x]))
-
-    print("Contoh Populasi : ", populasi)
-    print("Hasil Dekode : ", decode_kromosom(populasi[2]))
-    print("Hasil Fitness : ", calculate_fitness(populasi[2]))
-
-    #tesTournament
-    parent1 = tournament_parent(populasi, banyakPopulasi, banyakTourney)
-    parent2 = tournament_parent(populasi, banyakPopulasi, banyakTourney)
-    while parent1 == parent2:
+    while True:
+        parent1 = tournament_parent(populasi, banyakPopulasi, banyakTourney)
         parent2 = tournament_parent(populasi, banyakPopulasi, banyakTourney)
-    print("Kromosom Orang Tua : ")
-    print(parent1)
-    print(parent2)
+        while parent1 == parent2 :
+            parent2 = tournament_parent(populasi, banyakPopulasi, banyakTourney)
+        child = crossover(parent1, parent2, probCros)
+        child = mutasi(child[0], child[1], probMuta)
+        populasi = steady_state(populasi, banyakPopulasi, child)
+        if time.time() > timeout:
+            break
 
-    #tesCrossover&Mutasi
-    child = crossover(parent1, parent2, probCros)
-    print("Hasil Crossover : ")
-    print(child)
-    hasilMutasi = mutasi(child[0], child[1], probMuta)
-    print("Hasil Mutasi : ")
-    print(hasilMutasi)
+    fitness = calculate_all_fitness(populasi, banyakPopulasi)
+    bestKromosom = get_elitisme(fitness)
+    print("Hasil Minimasi Fungsi : ")
+    print("Kromosom Terbaik : ", populasi[bestKromosom])
+    print("Fitness Terbaik : ", calculate_fitness(populasi[bestKromosom]))
+    print("Decode Kromosom : ", decode_kromosom(populasi[bestKromosom]))
 
 if __name__ == '__main__':
     main()
