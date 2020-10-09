@@ -24,7 +24,9 @@ def decode_kromosom(kromosom):
 
 def calculate_fitness(kromosom):
     k = decode_kromosom(kromosom)
-    fitness = -1 * ((math.cos(k[0]) * math.sin(k[1])) - (k[0] / (k[1]**2 + 1)))
+    a = 0.0001
+    h = ((math.cos(k[0]) * math.sin(k[1])) - (k[0] / (k[1]**2 + 1)))
+    fitness = 1 / (h + a)
     return fitness
 
 def calculate_all_fitness(populasi, banyakPopulasi):
@@ -67,27 +69,29 @@ def mutasi(child1, child2, probMuta):
 def get_elitisme(fitnessAll):
     return fitnessAll.index(max(fitnessAll))
 
-def get_lowest(fitnessAll):
+def get_lowest(fitnessAll): #Mendapatkan kromosom dengan nilai fitness terendah
     return fitnessAll.index(min(fitnessAll))
 
 def steady_state(populasi, banyakPopulasi, child):
     fitness = calculate_all_fitness(populasi, banyakPopulasi)
     low1 = get_lowest(fitness)
+    temp = fitness[low1]
     fitness[low1] = 9999
     low2 = get_lowest(fitness)
+    fitness[low1] = temp
     populasi[low1] = child[0]
     populasi[low2] = child[1]
     return populasi
 
 def main():
-    banyakPopulasi = 100
-    banyakTourney = 10
+    banyakPopulasi = 50
+    banyakTourney = 25
     probCros = 0.65
     probMuta = 0.13
     timeout = time.time() + 60*2
 
     populasi = create_populasi(banyakPopulasi)
-    while True:
+    while time.time() < timeout:
         parent1 = tournament_parent(populasi, banyakPopulasi, banyakTourney)
         parent2 = tournament_parent(populasi, banyakPopulasi, banyakTourney)
         while parent1 == parent2 :
@@ -95,8 +99,6 @@ def main():
         child = crossover(parent1, parent2, probCros)
         child = mutasi(child[0], child[1], probMuta)
         populasi = steady_state(populasi, banyakPopulasi, child)
-        if time.time() > timeout:
-            break
 
     fitness = calculate_all_fitness(populasi, banyakPopulasi)
     bestKromosom = get_elitisme(fitness)
